@@ -58,16 +58,41 @@ public class Constants {
 "}\n" +
 "\n" +
 "function buildBrowsingHistoryPerIP(hashmap) {\n" +
+"	var tabsDiv = $('<ul></ul>').attr('id','myTab');\n" +
+"	tabsDiv.attr('class','nav nav-tabs');\n" +
+"	var tabsCont = $('<div></div>').attr('id','myTabContent');\n" +
+"	tabsCont.attr('class','tab-content');\n" +
+"\n" +
 "	for(var key in hashmap) {\n" +
 "		console.log('IP: '+key);\n" +
 "		var ipData = buildBrowsHistPerIPData(hashmap[key]);\n" +
-"		drawGraphPerIP(key,ipData);\n" +
+"		var pieGraphDiv = drawGraphPerIP(key,ipData);\n" +
+"		\n" +
+"		// Drawing Tabs for each IP address\n" +
+"		var tabDiv = $('<li></li>');\n" +
+"		var tabLink = $('<a></a>');\n" +
+"		tabLink.attr('href','#'+key.replace(/\\./g, '_' ));\n" +
+"		tabLink.attr('data-toggle','tab');\n" +
+"		tabLink.append(key);\n" +
+"		tabDiv.append(tabLink);\n" +
+"		tabsDiv.append(tabDiv);\n" +
+"		\n" +
+"		// Filling tabs with content\n" +
+"		var tabsContDiv = $('<div></div>').attr('id', key.replace(/\\./g, '_' ));\n" +
+"		tabsContDiv.attr('class','tab-pane fade');\n" +
+"		tabsContDiv.append(pieGraphDiv);\n" +
+"		tabsCont.append(tabsContDiv);\n" +
 "		\n" +
 "		//console.log(hashmap[key]);\n" +
 "	}\n" +
+"	\n" +
+"	$(\"#graphDiv\").append(tabsDiv);\n" +
+"	$(\"#graphDiv\").append(tabsCont);\n" +
 "}\n" +
 "\n" +
 "function drawGraphPerIP(ip, ipData) {\n" +
+"	var pieGraphDiv = $('<div></div>').attr('id',ip+'_div');\n" +
+"\n" +
 "	var data = [];\n" +
 "	for (var key in ipData) {\n" +
 "		data.push( {\n" +
@@ -76,7 +101,8 @@ public class Constants {
 "		});\n" +
 "	}\n" +
 "	//console.log(data.toSource());\n" +
-"	var ipDiv = $('<div></div>').attr('id',ip+'_div');\n" +
+"	var ipDiv = $('<div></div>');\n" +
+"	//var ipDiv = $('<div></div>').attr('id',ip+'_div');\n" +
 "	var h4Title = $('<H4></H4>').attr('class','graphTitle');\n" +
 "	h4Title.append('Browsing history for IP <span>'+ip+'</span>');\n" +
 "	ipDiv.append(h4Title);\n" +
@@ -95,8 +121,12 @@ public class Constants {
 "        clickable: true\n" +
 "    }\n" +
 "	});\n" +
-"	$(\"#graphDiv\").append(ipDiv);\n" +
-"	$(\"#graphDiv\").append(pieChartDiv);\n" +
+"	\n" +
+"	pieGraphDiv.append(ipDiv);\n" +
+"	pieGraphDiv.append(pieChartDiv);\n" +
+"	//$(\"#graphDiv\").append(ipDiv);\n" +
+"	//$(\"#graphDiv\").append(pieChartDiv);\n" +
+"	return pieGraphDiv;\n" +
 "}\n" +
 "\n" +
 "function buildBrowsHistPerIPData(browsHistArray) {\n" +
@@ -141,41 +171,7 @@ public class Constants {
 "<script src=\"http://www.flotcharts.org/flot/jquery.flot.pie.js\"></script>\n" +
 "<link rel=\"stylesheet\" href=\"http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css\"></link>\n" +
 "<link rel=\"stylesheet\" href=\"http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables_themeroller.css\"></link>\n" +
-"<script src=\"tableStat.js\"></script>\n" +
-"<script src=\"util.js\"></script>\n" +
-"<title>Syslog Statistics</title>\n" +
-"<style>\n" +
-"	body {\n" +
-"		margin: 30px; padding:30px;\n" +
-"		text-align:center;\n" +
-"	}\n" +
-"</style>\n" +
 "\n" +
-"</head>\n" +
-"<body>\n" +
-"\n" +
-"<h1>Browsing History read from the Syslog <small>Read from the file <span id=fileName></span></small></h1>\n" +
-"<br />\n" +
-"<div class=\"panel panel-default\">\n" +
-"  <div class=\"panel-heading\"><h4>Graph View <small>as at <span id=curDateTime></span></small></h4></div>\n" +
-"  <div class=\"panel-body\">\n" +
-"    <div id=graphDiv></div>\n" +
-"  </div>\n" +
-"</div>\n" +
-"<br />\n" +
-"<div class=\"panel panel-default\">\n" +
-"  <div class=\"panel-heading\"><h4>Data Table View <small>as at <span id=curDateTime></span></small></h4></div>\n" +
-"  <div class=\"panel-body\">\n" +
-"    <div id=tableDiv></div>\n" +
-"  </div>\n" +
-"</div>\n" +
-"<br />\n" +
-"\n" +
-"\n" +
-"<footer>\n" +
-"	<p>File created: <span id=curDateTime></span><p>\n" +
-"	<p> File name: <span id=fileName></span></p>\n" +
-"</footer>\n" +
 "\n" +
 " <!-- Le javascript\n" +
 "    ================================================== -->\n" +
@@ -189,6 +185,47 @@ public class Constants {
 "\n" +
 "	<!-- Latest compiled and minified JavaScript -->\n" +
 "	<script src=\"http://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js\"></script>\n" +
+"	\n" +
+"<script src=\"tableStat.js\"></script>\n" +
+"<script src=\"util.js\"></script>\n" +
+"\n" +
+"<title>Syslog Statistics</title>\n" +
+"<style>\n" +
+"	body {\n" +
+"		padding:30px;\n" +
+"	}\n" +
+"</style>\n" +
+"\n" +
+"</head>\n" +
+"<body>\n" +
+"\n" +
+"	<h1 class = \"masterhead\" >Browsing History read from the Syslog <small>file <span id=fileName></span></small></h1>\n" +
+"	<br />\n" +
+"	<button id=\"refreshButton\" type=\"button\" class=\"btn btn-primary\" data-toggle=\"tooltip\" data-placement=\"auto\" title=\"Tooltip on left\">Refresh Data from the file</button>\n" +
+"	<br />\n" +
+"		\n" +
+"	<div class=\"panel panel-default\">\n" +
+"	  <div class=\"panel-heading\"><h4 id=\"graphPanelTitle\">Graph View <small>as at <span class=curDateTime></span></small></h4></div>\n" +
+"	  <div class=\"panel-body\">\n" +
+"			<div id=graphDiv></div>\n" +
+"		</div>\n" +
+"	</div>\n" +
+"	\n" +
+"<br />\n" +
+"\n" +
+"	<div class=\"panel panel-default\">\n" +
+"	  <div class=\"panel-heading\"><h4 id=\"tablePanelTitle\" >Data Table View <small>as at <span class=curDateTime></span></small></h4></div>\n" +
+"	  <div class=\"panel-body\">\n" +
+"		<div id=tableDiv></div>\n" +
+"	  </div>\n" +
+"	</div>\n" +
+"<br />\n" +
+"\n" +
+"\n" +
+"<footer>\n" +
+"	<p>File created: <span id=curDateTime></span><p>\n" +
+"	<p> File name: <span id=fileName></span></p>\n" +
+"</footer>\n" +
 "\n" +
 "</body>\n" +
 "</html>";
@@ -213,12 +250,35 @@ public class Constants {
 "}\n" +
 "\n" +
 "$(document).ready(function() {\n" +
+"	// Initialize tooltip\n" +
+"	$(function () {\n" +
+"        $(\"[data-toggle='tooltip']\").tooltip();\n" +
+"    });\n" +
+"	// Initialize tabs\n" +
+"	$('#myTab a').click(function (e) {\n" +
+"		e.preventDefault()\n" +
+"		$(this).tab('show')\n" +
+"	});\n" +
+"	// Initialize popover\n" +
+"	$(\"#graphPanelTitle\").popover({ title: 'Graph View', content: \"Click on the IP address to see its graph\", placement: 'top', trigger: 'hover' });\n" +
+"	$(\"#tablePanelTitle\").popover({ title: 'Table View', content: \"Here you can find all the _UNSORTED_ data\", placement: 'top', trigger: 'hover' });\n" +
+"	$(\"#graphPanelTitle\").css('display','inline-block');\n" +
+"	$(\"#tablePanelTitle\").css('display','inline-block');\n" +
+"	\n" +
 "	readTheDataFile('"+this.getTxtfile()+"');\n" +
+"	\n" +
+"	$(\"#refreshButton\").css('margin','10px');\n" +
+"	$(\"#refreshButton\").css('text-align','right');\n" +
+"	\n" +
+"	$(\".masterhead\").css('text-align','center');\n" +
+"	//$(\".panel-body\").css('background-color','#eee');\n" +
+"	\n" +
 "});\n" +
 "\n" +
 "function readTheDataFile(url) {\n" +
+"	\n" +
 "	var logArray = new Array();\n" +
-"	$(\"#curDateTime\").append(dateStr.slice(3,24));\n" +
+"	$(\".curDateTime\").append(dateStr.slice(3,24));\n" +
 "	$(\"#fileName\").append(url);\n" +
 "	\n" +
 "	$.ajax(url, {\n" +
@@ -273,8 +333,9 @@ public class Constants {
 "	//console.log(hashmap.toSource());\n" +
 "	//alert(\"Match Found! \"+getDomain(\"asd-32.12afg.google.com\"));\n" +
 "	\n" +
+"	\n" +
 "	$.each(logArray, function(idx, log) {\n" +
-"		var row = $('<tr></tr>').addClass('row');\n" +
+"		var row = $('<tr></tr>');\n" +
 "		var col1 = $('<td></td>').text(log.date);\n" +
 "		var col2 = $('<td></td>').text(log.time);\n" +
 "		var col3 = $('<td></td>').text(log.localIP);\n" +
@@ -289,7 +350,7 @@ public class Constants {
 "	$(\"#tableDiv\").append(table);\n" +
 "	\n" +
 "	$('#logsTable').dataTable( {\n" +
-"        \"aaSorting\": [[ 4, \"desc\" ]]\n" +
+"        \"aaSorting\": [[ 1, \"desc\" ]]\n" +
 "    } );\n" +
 "	\n" +
 "	// Add the Flot version string to the footer\n" +
