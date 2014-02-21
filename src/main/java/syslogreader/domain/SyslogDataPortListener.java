@@ -32,16 +32,14 @@ public class SyslogDataPortListener implements Runnable {
 
     private SyslogData syslogData;
     private SyslogFilter filter = new SyslogFilter();
-    private MainWindow outputFrame;
+    private MainWindow mainWindow;
     private int localPort = 8514;
     private boolean stopRequested;
     private DatagramSocket socket;
     private Thread runThread;
-    
-    
 
     public SyslogDataPortListener(MainWindow outputFrame, int localPort) {
-        this.outputFrame = outputFrame;
+        this.mainWindow = outputFrame;
         this.localPort = localPort;
     }
 
@@ -50,21 +48,20 @@ public class SyslogDataPortListener implements Runnable {
         stopRequested = false;
         try {
             socket = new DatagramSocket(localPort);
-            this.outputFrame.addMsgToLiveTextArea("Service log started on port " + localPort);
+            this.mainWindow.addMsgToLiveTextArea("Service log started on port " + localPort);
         } catch (SocketException e) {
-            this.outputFrame.addMsgToLiveTextArea("Can't start listening: " + e.getMessage());
+            this.mainWindow.addMsgToLiveTextArea("Can't start listening: " + e.getMessage());
         }
         try {
             while (!stopRequested) {
                 DatagramPacket dato = new DatagramPacket(new byte[2048], 2048);
                 socket.receive(dato);
                 String msg = new String(dato.getData(), 0, dato.getLength());
-//                                System.out.println(msg);
                 messageReceived(msg);
             }
 
         } catch (IOException e) {
-            this.outputFrame.addMsgToLiveTextArea(e.getMessage());
+            this.mainWindow.addMsgToLiveTextArea(e.getMessage());
         }
 
     }
@@ -79,19 +76,16 @@ public class SyslogDataPortListener implements Runnable {
     }
 
     public void messageReceived(String unformattedMsg) {
-        this.outputFrame.addMsgToLiveTextArea(unformattedMsg);
+        this.mainWindow.addMsgToLiveTextArea(unformattedMsg);
         SyslogData syslogData = new SyslogData(unformattedMsg);
         if (isFilerApplied()) {
             syslogData = filter.validateMsg(syslogData);
         }
-            this.outputFrame.addMsgToFilteredViewTable(syslogData == null ? null : syslogData);
+            this.mainWindow.addMsgToFilteredViewTable(syslogData == null ? null : syslogData);
 
-//        } else {
-//            this.outputFrame.addMsgToFilteredViewTable(syslogData);
-//        }
     }
 
     private boolean isFilerApplied() {
-        return this.outputFrame.getApplyFilterCheckBox().isSelected();
+        return this.mainWindow.getApplyFilterCheckBox().isSelected();
     }
 }

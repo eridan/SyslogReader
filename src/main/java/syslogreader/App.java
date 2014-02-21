@@ -73,6 +73,8 @@ public class App {
 //         Start listening for incoming data
         
         SyslogDataPortListener syslogListener = new SyslogDataPortListener(mainWindow, localPort);
+        mainWindow.setSyslogListener(syslogListener);
+        mainWindow.setListenerPort(localPort);
         Thread t = new Thread(syslogListener);
         t.start();
     }

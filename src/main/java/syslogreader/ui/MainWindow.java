@@ -1,31 +1,41 @@
 package syslogreader.ui;
 
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JCheckBox;
 import javax.swing.JToggleButton;
 import javax.swing.table.DefaultTableModel;
 import syslogreader.domain.SyslogData;
+import syslogreader.domain.SyslogDataPortListener;
 import syslogreader.util.SyslogDataFileWriter;
 
 public class MainWindow extends javax.swing.JFrame {
     
     private DateFormat df = new SimpleDateFormat("DD-MMM-yyyy HH:mm:ss");
+    private SyslogDataPortListener syslogListener;
+    private int localPort;
+    private SyslogDataFileWriter syslogDataFileWriter  = new SyslogDataFileWriter();;
+    private File statHtmlFile;
 
-//    private Map<String,SyslogData> browsingHistory = new HashMap<String, SyslogData>();
-    
     /**
      * Creates new form MainWindow
      */
     public MainWindow() {
         initComponents();
+        try {
+            this.statHtmlFile = this.syslogDataFileWriter.buildHTML_JSFiles();
+        } catch (IOException ex) {
+            addMsgToLiveTextArea("Could not build stat views. Stat Views will be unavailable");
+            ex.printStackTrace();
+        }
     }
 
     /**
@@ -88,6 +98,11 @@ public class MainWindow extends javax.swing.JFrame {
         resumeBtn.setFocusable(false);
         resumeBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         resumeBtn.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        resumeBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                resumeBtnActionPerformed(evt);
+            }
+        });
         toolBar.add(resumeBtn);
 
         statBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/statistics.png"))); // NOI18N
@@ -95,6 +110,11 @@ public class MainWindow extends javax.swing.JFrame {
         statBtn.setFocusable(false);
         statBtn.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         statBtn.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        statBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                statBtnActionPerformed(evt);
+            }
+        });
         toolBar.add(statBtn);
 
         filteredView.setModel(new javax.swing.table.DefaultTableModel(
@@ -209,15 +229,17 @@ public class MainWindow extends javax.swing.JFrame {
     }//GEN-LAST:event_showHtml_mItemActionPerformed
 
     private void stopBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopBtnActionPerformed
-        try {
-            InetAddress ia = InetAddress.getByName("194.186.36.190");   // utro.ru
-            
-            System.out.println(ia.getCanonicalHostName());
-            ia = InetAddress.getByName("91.190.216.51");   // facebook
-            System.out.println(ia.getCanonicalHostName());
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        this.syslogListener.stopRequest();
+        addMsgToLiveTextArea("Listener Suspended / Paused");
+//        try {
+//            InetAddress ia = InetAddress.getByName("194.186.36.190");   // utro.ru
+//            
+//            System.out.println(ia.getCanonicalHostName());
+//            ia = InetAddress.getByName("91.190.216.51");   // facebook
+//            System.out.println(ia.getCanonicalHostName());
+//        } catch (UnknownHostException ex) {
+//            Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+//        }
 
     }//GEN-LAST:event_stopBtnActionPerformed
 
@@ -228,6 +250,26 @@ public class MainWindow extends javax.swing.JFrame {
             addMsgToLiveTextArea("Filter was cleared");
         }
     }//GEN-LAST:event_applyFilterCheckBoxActionPerformed
+
+    private void resumeBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resumeBtnActionPerformed
+        this.syslogListener = new SyslogDataPortListener(this, this.localPort);
+        Thread t = new Thread(syslogListener);
+        t.start();
+        addMsgToLiveTextArea("Listener Resumed");
+    }//GEN-LAST:event_resumeBtnActionPerformed
+
+    private void statBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_statBtnActionPerformed
+        if(this.statHtmlFile.exists()) {
+            System.out.println("Opening HTML Stat File");
+            try {
+                Desktop.getDesktop().browse(this.statHtmlFile.toURI());
+            } catch (IOException ex) {
+                Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            System.out.println("Displaying Alert window");
+        }
+    }//GEN-LAST:event_statBtnActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenu aboutMenu;
@@ -253,11 +295,9 @@ public class MainWindow extends javax.swing.JFrame {
 
     private JToggleButton follow = new JToggleButton("Follow up");
     
-    
     public void addMsgToLiveTextArea(String i) {
         i = i.replaceAll("\\n", "");
         i = i.replaceAll("\\t", "");
-//        SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         liveTextArea.append(df.format(new Date()) + ": " + i + "\n");
         if (follow.isSelected()) {
             String s = liveTextArea.getText();
@@ -275,8 +315,7 @@ public class MainWindow extends javax.swing.JFrame {
         } catch (UnknownHostException ex) {
             Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
         }
-            SyslogDataFileWriter fw = new SyslogDataFileWriter();
-            fw.saveLogDataToLocalFile(syslogData);
+            this.syslogDataFileWriter.saveLogDataToLocalFile(syslogData);
 //            browsingHistory.put(syslogData.getLocalIP(), syslogData);
             DefaultTableModel tModel = (DefaultTableModel)filteredView.getModel();
             tModel.addRow(new Object[]{"", "", "", "", "", "", ""});
@@ -294,6 +333,14 @@ public class MainWindow extends javax.swing.JFrame {
 
     public JCheckBox getApplyFilterCheckBox() {
         return applyFilterCheckBox;
+    }
+
+    public void setSyslogListener(SyslogDataPortListener syslogListener) {
+        this.syslogListener = syslogListener;
+    }
+
+    public void setListenerPort(int localPort) {
+        this.localPort = localPort;
     }
 
     
